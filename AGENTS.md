@@ -1,0 +1,2 @@
+# ORION project instructions
+Read docs/IMPLEMENTATION_PLAN.md and docs/IMPLEMENTATION_LOG.md before continuing. Preserve screenshot navigation and label all synthetic data. Never invent model metrics, bureau connections, extraction fields or regulatory claims. Keep financial calculations in Python, validate inputs, retain original model assessments when humans override, and audit mutations. Use .venv and run pytest plus frontend build after meaningful changes. Never commit .env, local databases, model artifacts or uploads.

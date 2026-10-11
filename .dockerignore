@@ -1,0 +1,11 @@
+.git
+.env
+.venv
+data
+artifacts
+tmp
+references
+frontend/node_modules
+frontend/dist
+frontend/test-results
+docs/screenshots

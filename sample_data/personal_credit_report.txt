@@ -1,0 +1,13 @@
+FICTIONAL EDUCATIONAL CREDIT REPORT — NOT A LIVE BUREAU REPORT
+Name: Sample Demonstration Customer
+Monthly income: INR 120,000
+Monthly obligations: INR 12,000
+Credit score: 760
+Delinquencies: 0
+Utilization: 0.25
+Inquiries: 2
+Outstanding: INR 150,000
+Employer: Example Manufacturing Ltd
+Address: 42 Demonstration Road, Mumbai
+Account: Example Bank | Personal loan | 150000 | 300000 | 12000 | 0 | 000000
+Account: Fictional Card Issuer | Credit card | 25000 | 100000 | 1500 | 0 | 000030

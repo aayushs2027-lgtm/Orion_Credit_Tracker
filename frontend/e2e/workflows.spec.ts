@@ -1,0 +1,58 @@
+import {test,expect} from '@playwright/test';
+import {readFileSync} from 'node:fs';
+const password=readFileSync('../.env','utf8').split('\n').find(x=>x.startsWith('ORION_ADMIN_PASSWORD='))!.split('=').slice(1).join('=').trim();
+test('Executive navigation, intake, inference, review and exports',async({page})=>{
+ const errors:string[]=[];page.on('pageerror',e=>errors.push(e.message));
+ await page.goto('/');await page.getByLabel('Password',{exact:true}).fill(password);await page.getByRole('button',{name:'Sign in securely'}).click();
+ await expect(page.getByRole('heading',{name:'Institutional Command Center'})).toBeVisible();
+ await expect(page.getByText('ASSESSED EXPOSURE',{exact:true})).toBeVisible();
+ await page.screenshot({path:'../docs/screenshots/command-center.png',fullPage:true});
+ const links=page.locator('nav a');await expect(links).toHaveCount(16);
+ for(let i=0;i<16;i++){await links.nth(i).click();await expect(page.locator('main h1')).toBeVisible();await expect(page.locator('main')).not.toContainText('Select a case and run underwriting');}
+ await links.nth(14).click();await expect(page.getByRole('heading',{name:'Held-out candidate benchmark'})).toBeVisible();
+ await page.screenshot({path:'../docs/screenshots/governance.png',fullPage:true});
+ await links.nth(1).click();const id=Date.now();
+ await page.getByLabel('Legal full name',{exact:true}).fill('Browser Demo '+id);
+ await page.getByLabel('Identity / registration ID').fill('E2E-'+id);
+ await page.getByLabel('Registered address',{exact:true}).fill('42 Fictional Browser Road');
+ await page.getByRole('button',{name:'Save & continue'}).click();
+ await expect(page.getByRole('heading',{name:/Step 2: Upload/})).toBeVisible();
+ await page.getByLabel('Upload document').setInputFiles({name:'browser-report.txt',mimeType:'text/plain',buffer:Buffer.from('Monthly income: INR 150,000\nCredit score: 780\n')});
+ await expect(page.getByText('browser-report.txt',{exact:true})).toBeVisible();
+ await page.getByRole('button',{name:'Review extracted fields'}).click();
+ await page.getByRole('button',{name:'Accept',exact:true}).first().click();await expect(page.getByRole('status')).toContainText('Field reviewed');
+ await page.getByRole('button',{name:'Apply accepted fields'}).click();await expect(page.getByRole('status')).toContainText('Reviewed fields applied');
+ await page.getByRole('button',{name:'Run entity resolution'}).click();await page.getByRole('button',{name:'Continue to underwriting'}).click();
+ await page.getByRole('button',{name:'Launch case & begin underwriting'}).click();
+ await expect(page.getByRole('heading',{name:'Personal Credit Underwriting & ML Risk Intelligence'})).toBeVisible();
+ await expect(page.getByText('MODEL PD',{exact:true})).toBeVisible();
+ await page.getByRole('button',{name:'Human review',exact:true}).click();
+ await page.getByLabel('Reason (minimum 10 characters)').fill('Browser test verified fictional capacity and supporting evidence');
+ await page.getByLabel('Credit override (administrator only)').check();await page.getByRole('button',{name:'Record decision'}).click();
+ await expect(page.getByRole('status')).toContainText('Human decision and audit record saved');
+ await links.nth(15).click();await expect(page.getByText('Integrity verified',{exact:true})).toBeVisible();
+ const download=page.waitForEvent('download');await page.getByRole('link',{name:'Export audit log JSON'}).click();expect((await download).suggestedFilename()).toBe('orion-audit.json');
+ await links.nth(2).click();await page.getByLabel('Search customers').fill('Browser Demo '+id);await expect(page.locator('tbody tr')).toHaveCount(1);
+ expect(errors).toEqual([]);
+});
+test('Mobile navigation and actual scenario calculation',async({page})=>{
+ await page.goto('/');await page.getByLabel('Password',{exact:true}).fill(password);await page.getByRole('button',{name:'Sign in securely'}).click();
+ await page.getByLabel('Active application').selectOption('8');await page.locator('nav a').nth(9).click();
+ await page.getByLabel('Revenue change (%)',{exact:true}).fill('-20');await page.getByRole('button',{name:'Run stress & Monte Carlo'}).click();
+ await expect(page.getByText('STRESSED EXPECTED LOSS',{exact:true})).toBeVisible();
+ await page.setViewportSize({width:780,height:1000});await page.screenshot({path:'../docs/screenshots/scenario-mobile.png',fullPage:true});
+ expect(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth)).toBe(true);
+});
+test('Business intake, collateral, tree inference and report import',async({page})=>{
+ await page.goto('/');await page.getByLabel('Password',{exact:true}).fill(password);await page.getByRole('button',{name:'Sign in securely'}).click();
+ await page.locator('nav a').nth(1).click();await page.getByRole('button',{name:'Business / commercial',exact:true}).click();
+ const id=Date.now();await page.getByLabel('Registered business name').fill('Browser Business '+id);await page.getByLabel('Identity / registration ID').fill('BIZ-'+id);await page.getByLabel('Registered address',{exact:true}).fill('10 Fictional Industrial Estate');
+ await page.getByLabel('Annual revenue (INR)',{exact:true}).fill('24000000');await page.getByLabel('Annual EBITDA (INR)',{exact:true}).fill('4000000');await page.getByLabel('Annual cash flow for debt service (INR)',{exact:true}).fill('3200000');await page.getByLabel('Secured facility (register collateral in Collateral Lab)').check();
+ await page.getByRole('button',{name:'Save & continue'}).click();await expect(page.getByRole('heading',{name:/Step 2: Upload/})).toBeVisible();
+ await page.getByLabel('Upload document').setInputFiles({name:'business-bureau.txt',mimeType:'text/plain',buffer:Buffer.from('Credit score: 740\nInquiries: 1\nAccount: Demo Business Bank | Term loan | 100000 | 200000 | 5000 | 0 | 000000\n')});await expect(page.getByText('business-bureau.txt',{exact:true})).toBeVisible();
+ await page.locator('nav a').nth(7).click();await page.getByLabel('Market value (INR)').fill('2000000');await page.getByLabel('Valuation date').fill('2026-10-01');await page.getByRole('button',{name:'Add asset',exact:true}).click();await expect(page.getByRole('status')).toContainText('Collateral saved');
+ await page.locator('nav a').nth(5).click();await page.getByLabel('Assessment algorithm').selectOption('XGBoost');await page.getByRole('button',{name:'Run assessment',exact:true}).click();await expect(page.getByRole('status')).toContainText('Assessment saved');
+ await expect(page.getByText('DEBT SERVICE COVERAGE',{exact:true})).toBeVisible();await page.getByRole('button',{name:'Import reviewed credit accounts'}).click();await expect(page.getByRole('status')).toContainText('Reviewed credit accounts imported');await expect(page.getByRole('cell',{name:'Demo Business Bank',exact:true})).toBeVisible();
+ await page.locator('nav a').nth(12).click();await expect(page.getByRole('heading',{name:/SHAP attribution/})).toBeVisible();
+ await page.locator('nav a').nth(5).click();await page.reload();await expect(page.getByRole('heading',{name:'Business Credit Underwriting & Financial Analysis'})).toBeVisible();
+});

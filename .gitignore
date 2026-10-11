@@ -1,0 +1,14 @@
+.venv/
+node_modules/
+frontend/dist/
+__pycache__/
+.pytest_cache/
+*.pyc
+.env
+data/
+tmp/
+artifacts/
+*.log
+test-results/
+.chart-data-*/
+.codex-finalizer/

@@ -1,0 +1,13 @@
+services:
+  orion:
+    build: .
+    ports:
+      - "127.0.0.1:8000:8000"
+    environment:
+      ORION_ADMIN_PASSWORD: ${ORION_ADMIN_PASSWORD:?Set ORION_ADMIN_PASSWORD in .env}
+    volumes:
+      - orion-data:/app/data
+      - orion-models:/app/artifacts
+volumes:
+  orion-data:
+  orion-models:

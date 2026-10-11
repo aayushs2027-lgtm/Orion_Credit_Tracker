@@ -1,0 +1,13 @@
+# Vibe Coding Log — ORION (one-page content)
+
+**Platform:** Codex desktop with local PowerShell, Python 3.12, Node.js/pnpm and Chromium Playwright. **Date:** 12 October 2026, India time. No previous Google AI Studio source was used. Its supplied screenshots served only as visual specifications.
+
+**Prompt strategy:** The user's master directive established explicit source priority, genuine Python analytics, persistence, synthetic-data honesty and test-based completion. The implementation started with full assignment text extraction and visual inspection of all 20 screenshot pages. Traceability and a page-by-page UI reconstruction were written before major implementation decisions. The academic decision-automation track determined the mandatory Logistic Regression, Random Forest, XGBoost and SHAP implementations.
+
+**Agent workflow:** One agent worked directly in the local workspace; no parallel agents were used. Incremental stages established the database/API first, then deterministic financial functions, reproducible ML artifacts, the React workspaces, human decision workflows and browser verification. Progress was recorded in repository documentation. Package downloads and browser installation used the tool's approval system when sandbox restrictions required it.
+
+**Iteration evidence:** Initial API tests exposed a wildcard import collision between the database Field model and Pydantic Field; explicit import fixed it. TypeScript compilation found an untyped callback; corrected before browser execution. Sandboxed Python/Node processes stalled or could not traverse installed package links; approved local execution completed the checks. SPA refresh fallback was added. Browser workflows exercised actual persisted intake, document review, inference, decisions and export. All three SHAP explainers were checked against model-output additivity.
+
+**Ownership of technical behavior:** Financial formulas and unit conventions are in ALGORITHM_REGISTRY; model parameters, CV selection, calibration and errors are visible in Governance. Synthetic metrics are measured, not copied from screenshots. The team must understand and defend these choices itself, including the distinction between model recommendation and human decision, and between illustrative loss assumptions and calibrated lending risk.
+
+**Boundaries:** No GitHub publication, public deployment, live bureau connection, paid LLM integration, regulatory certification or measured business ROI. Scanned-document OCR requires a Tesseract installation that is currently unavailable. Docker and PostgreSQL configurations/design have not been validated locally.

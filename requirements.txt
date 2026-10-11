@@ -1,0 +1,16 @@
+fastapi
+uvicorn
+sqlalchemy
+alembic
+numpy
+pandas
+scipy
+scikit-learn
+xgboost
+shap
+rapidfuzz
+pymupdf
+python-multipart
+pytest
+httpx
+pillow

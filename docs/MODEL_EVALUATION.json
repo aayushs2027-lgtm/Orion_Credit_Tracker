@@ -1,0 +1,212 @@
+{
+  "version": "20261011T205522521361",
+  "selected": "Logistic Regression",
+  "candidates": [
+    {
+      "name": "Logistic Regression",
+      "cv_auc": 0.8674734524104875,
+      "cv_std": 0.013359882334803617,
+      "roc_auc": 0.8604716276754605,
+      "pr_auc": 0.8365311459735517,
+      "precision": 0.6531531531531531,
+      "recall": 0.8841463414634146,
+      "f1": 0.7512953367875648,
+      "brier": 0.1521085281330566,
+      "confusion": [
+        [
+          119,
+          77
+        ],
+        [
+          19,
+          145
+        ]
+      ],
+      "parameters": {
+        "model__C": 1
+      },
+      "calibration": [
+        {
+          "predicted": 0.05964658235577343,
+          "observed": 0.0410958904109589
+        },
+        {
+          "predicted": 0.18415575668537063,
+          "observed": 0.24
+        },
+        {
+          "predicted": 0.31467362830013856,
+          "observed": 0.25
+        },
+        {
+          "predicted": 0.4314747338756916,
+          "observed": 0.3333333333333333
+        },
+        {
+          "predicted": 0.5756381296300804,
+          "observed": 0.5
+        },
+        {
+          "predicted": 0.6864657954244774,
+          "observed": 0.725
+        },
+        {
+          "predicted": 0.811142645336751,
+          "observed": 0.7555555555555555
+        },
+        {
+          "predicted": 0.9349555758914418,
+          "observed": 0.9
+        }
+      ],
+      "errors": {
+        "false_positive": 77,
+        "false_negative": 19
+      }
+    },
+    {
+      "name": "Random Forest",
+      "cv_auc": 0.8544639827064341,
+      "cv_std": 0.010095323393168282,
+      "roc_auc": 0.8530674464907915,
+      "pr_auc": 0.8025886074976691,
+      "precision": 0.672645739910314,
+      "recall": 0.9146341463414634,
+      "f1": 0.7751937984496124,
+      "brier": 0.1552818914521235,
+      "confusion": [
+        [
+          123,
+          73
+        ],
+        [
+          14,
+          150
+        ]
+      ],
+      "parameters": {
+        "max_depth": 8,
+        "min_samples_leaf": 5
+      },
+      "calibration": [
+        {
+          "predicted": 0.078251963475689,
+          "observed": 0.0
+        },
+        {
+          "predicted": 0.18945385109801327,
+          "observed": 0.19402985074626866
+        },
+        {
+          "predicted": 0.31147289408628315,
+          "observed": 0.2708333333333333
+        },
+        {
+          "predicted": 0.4439434003735254,
+          "observed": 0.36666666666666664
+        },
+        {
+          "predicted": 0.5611369900706503,
+          "observed": 0.6285714285714286
+        },
+        {
+          "predicted": 0.6874255190706884,
+          "observed": 0.7777777777777778
+        },
+        {
+          "predicted": 0.8155218221672188,
+          "observed": 0.7758620689655172
+        },
+        {
+          "predicted": 0.9204663721886656,
+          "observed": 0.8648648648648649
+        }
+      ],
+      "errors": {
+        "false_positive": 73,
+        "false_negative": 14
+      }
+    },
+    {
+      "name": "XGBoost",
+      "cv_auc": 0.8552404699250982,
+      "cv_std": 0.011568155499211828,
+      "roc_auc": 0.8432211299153809,
+      "pr_auc": 0.8031787692875999,
+      "precision": 0.6367521367521367,
+      "recall": 0.9085365853658537,
+      "f1": 0.7487437185929648,
+      "brier": 0.16073963046073914,
+      "confusion": [
+        [
+          111,
+          85
+        ],
+        [
+          15,
+          149
+        ]
+      ],
+      "parameters": {
+        "learning_rate": 0.05,
+        "max_depth": 2
+      },
+      "calibration": [
+        {
+          "predicted": 0.08455095375673129,
+          "observed": 0.038461538461538464
+        },
+        {
+          "predicted": 0.19023150045956885,
+          "observed": 0.17857142857142858
+        },
+        {
+          "predicted": 0.3089333033332458,
+          "observed": 0.23076923076923078
+        },
+        {
+          "predicted": 0.43635400012135506,
+          "observed": 0.4375
+        },
+        {
+          "predicted": 0.5586471370288304,
+          "observed": 0.6571428571428571
+        },
+        {
+          "predicted": 0.6907303166943927,
+          "observed": 0.6744186046511628
+        },
+        {
+          "predicted": 0.8086844866092389,
+          "observed": 0.7692307692307693
+        },
+        {
+          "predicted": 0.9144842499180844,
+          "observed": 0.8947368421052632
+        }
+      ],
+      "errors": {
+        "false_positive": 85,
+        "false_negative": 15
+      }
+    }
+  ],
+  "features": [
+    "credit_score",
+    "repayment_burden",
+    "delinquencies",
+    "utilization",
+    "stability_years",
+    "business"
+  ],
+  "training_rows": 1440,
+  "test_rows": 360,
+  "seed": 42,
+  "threshold": 0.3,
+  "source": "Synthetic educational dataset; no real bank outcomes. Selection by training CV only; test set untouched by tuning.",
+  "limitations": [
+    "Random split is not out-of-time validation",
+    "Synthetic relationships do not establish external validity",
+    "Not approved for real lending or demographic fairness claims"
+  ]
+}
