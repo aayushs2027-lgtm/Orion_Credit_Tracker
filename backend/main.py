@@ -11,6 +11,7 @@ from .database import Field
 from .security import password_matches, password_hash, audit, verify
 from .finance import assessment, stress_profile, monte_carlo, emi
 from .documents import extract, credit_accounts
+from .consistency import normalized_address, record_flag, revenue_check
 from src.model import predict, metadata, train
 
 app=FastAPI(title='ORION Credit Intelligence',version='1.0.0')
@@ -108,6 +109,7 @@ def create_customer(data:CustomerInput,u=Depends(analyst),db=Depends(db_session)
     values=data.model_dump(); financial=values.pop('financial'); values['identity']=values['identity'].upper().strip()
     if db.scalar(select(Customer).where(Customer.identity==values['identity'])): raise HTTPException(409,'Identity already exists; open the existing customer')
     c=Customer(**values); db.add(c); db.flush(); db.add(Profile(customer_id=c.id,values=financial)); audit(db,u.username,'customer.created',str(c.id),{'kind':c.kind})
+    revenue_check(db,c,financial)
     return row(c)
 @app.get('/api/customers/{cid}')
 def customer(cid:int,u=Depends(user),db=Depends(db_session)):
@@ -123,6 +125,7 @@ def update_customer(cid:int,data:CustomerInput,u=Depends(analyst),db=Depends(db_
         db.add(Flag(customer_id=cid,category='income',detail=f"Income increased {financial['income']/old['income']:.2f}x; {old['income']} to {financial['income']}; verification required"))
     if vals['address']!=c.address: db.add(Flag(customer_id=cid,category='address',detail=f'Address changed from {c.address} to {vals["address"]}'))
     for k,v in vals.items(): setattr(c,k,v)
+    revenue_check(db,c,financial)
     db.add(Profile(customer_id=cid,values=financial));audit(db,u.username,'customer.updated',str(cid),{'previous_financial':old,'new_financial':financial})
     return row(c)
 @app.post('/api/customers/{cid}/relationships')
@@ -184,6 +187,8 @@ async def upload(aid:int,file:UploadFile=File(...),u=Depends(analyst),db=Depends
 @app.patch('/api/fields/{fid}')
 def correct_field(fid:int,data:FieldInput,u=Depends(analyst),db=Depends(db_session)):
     f=get(db,Field,fid)
+    if f.key=='address' and data.status in ('accepted','corrected') and not 3<=len(data.value.strip())<=500:
+        raise HTTPException(422,'Reviewed address must contain 3–500 characters')
     if data.status in ('accepted','corrected') and f.key not in ('employer','address'):
         try:
             value=float(data.value)
@@ -191,13 +196,17 @@ def correct_field(fid:int,data:FieldInput,u=Depends(analyst),db=Depends(db_sessi
             elif not __import__('math').isfinite(value) or value<0:raise ValueError()
         except Exception:raise HTTPException(422,'Invalid value for '+f.key)
     before=f.value;f.value=data.value;f.status=data.status
+    if f.key=='address' and data.status in ('accepted','corrected'):
+        d=get(db,Document,f.document_id);a=get(db,Application,d.application_id);c=get(db,Customer,a.customer_id)
+        if normalized_address(f.value)!=normalized_address(c.address):
+            record_flag(db,c.id,a.id,'address_conflict',f'Master address: {c.address}. Reviewed source: {d.filename}, page {f.page}, field {f.id}. Reported address: {f.value}. Source evidence: {f.evidence}')
     audit(db,u.username,'field.reviewed',str(fid),{'before':before,**data.model_dump()});return row(f)
 @app.post('/api/applications/{aid}/apply-fields')
 def apply_fields(aid:int,u=Depends(analyst),db=Depends(db_session)):
     a=get(db,Application,aid);c=get(db,Customer,a.customer_id);p={**Financial().model_dump(),**profile(db,c.id)}; applied=[]
     fields=db.scalars(select(Field).join(Document,Field.document_id==Document.id).where(Document.application_id==aid,Field.status.in_(['accepted','corrected'])))
     for f in fields:
-        if f.key in p:
+        if f.key in p and f.key not in ('previous_year_revenue','revenue_year','previous_revenue_year'):
             try:p[f.key]=f.value if f.key=='employer' else float(f.value)
             except ValueError:raise HTTPException(422,f'Invalid numeric value for {f.key}')
             applied.append(f.key)
@@ -211,6 +220,9 @@ def review(aid:int,data:ReviewInput,u=Depends(reviewer),db=Depends(db_session)):
     a=get(db,Application,aid);ar=latest(db,Assessment,Assessment.application_id,aid)
     if not ar: raise HTTPException(409,'Run assessment before review')
     if a.status in ('approved','declined'): raise HTTPException(409,'Final decision already recorded')
+    if data.decision=='approved':
+        unresolved=db.scalar(select(Flag).where(Flag.customer_id==a.customer_id,Flag.category.in_(['address_conflict','revenue_growth']),Flag.status!='manager_approved'))
+        if unresolved: raise HTTPException(409,'Verify consistency findings and obtain manager approval before credit approval')
     if data.decision in ('approved','declined') and data.decision!=ar.result['recommendation'] and not data.override: raise HTTPException(422,'Decision differs from model; explicitly mark override')
     if data.override and u.role!='admin': raise HTTPException(403,'Administrator required for credit override')
     r=Review(application_id=aid,assessment_id=ar.id,reviewer=u.username,original=ar.result['recommendation'],decision=data.decision,reason=data.reason,override=int(data.override));db.add(r);a.status=data.decision;a.assigned_to=data.assigned_to
@@ -219,7 +231,17 @@ def review(aid:int,data:ReviewInput,u=Depends(reviewer),db=Depends(db_session)):
 def flags(u=Depends(user),db=Depends(db_session)):return [dict(**row(f),customer=get(db,Customer,f.customer_id).name) for f in db.scalars(select(Flag).order_by(Flag.id.desc()))]
 @app.patch('/api/flags/{fid}')
 def resolve(fid:int,data:Resolution,u=Depends(reviewer),db=Depends(db_session)):
-    f=get(db,Flag,fid);f.status=data.status;f.resolution=data.reason;audit(db,u.username,'investigation.updated',str(fid),data.model_dump());return row(f)
+    f=get(db,Flag,fid)
+    if f.category in ('address_conflict','revenue_growth'):
+        if data.status in ('resolved','dismissed'):raise HTTPException(422,'Consistency findings require verification and manager approval')
+        if f.status=='manager_approved':raise HTTPException(409,'Manager-approved finding is locked; new evidence creates a new finding')
+        if data.status=='manager_approved':
+            if u.role!='admin':raise HTTPException(403,'Administrator acting as manager required')
+            if f.status!='verified':raise HTTPException(409,'Verify evidence before manager approval')
+        if data.status=='escalated' and not data.assigned_team.strip():raise HTTPException(422,'Choose an escalation team')
+    before={'status':f.status,'resolution':f.resolution}
+    f.status=data.status;f.resolution=(f'Assigned Team: {data.assigned_team.strip()}. ' if data.assigned_team.strip() else '')+data.reason
+    audit(db,u.username,'investigation.updated',str(fid),{'before':before,**data.model_dump()});return row(f)
 @app.post('/api/applications/{aid}/scenario')
 def scenario(aid:int,data:Scenario,u=Depends(user),db=Depends(db_session)):
     a=get(db,Application,aid);base=calculate(db,a);stressed=calculate(db,a,data)
@@ -262,7 +284,7 @@ def portfolio(kind:str='',sector:str='',u=Depends(user),db=Depends(db_session)):
     trends={}
     for a in db.scalars(select(Application)):
         month=a.created[:7];t=trends.setdefault(month,dict(month=month,applications=0,approved=0,declined=0));t['applications']+=1;t['approved']+=int(a.status=='approved');t['declined']+=int(a.status=='declined')
-    return dict(customers=db.scalar(select(func.count()).select_from(Customer)),applications=db.scalar(select(func.count()).select_from(Application)),pending=db.scalar(select(func.count()).select_from(Application).where(Application.status.in_(['pending_review','escalated','information_requested']))),flags=db.scalar(select(func.count()).select_from(Flag).where(Flag.status.in_(['open','investigating']))),exposure=exposure,expected_loss=sum(x['expected_loss'] for x in items),high_risk=sum(x['risk_band']=='High' for x in items),approved=approvals,declined=declines,by_sector=group('sector'),by_risk=group('risk_band'),by_product=group('kind'),items=items,trends=sorted(trends.values(),key=lambda x:x['month']),disbursed_count=len(loans),outstanding=sum(x.outstanding for x in loans),scope='Assessed application pipeline, excluding declines; requested principal is exposure proxy. Disbursed balance is reported separately. Trends group current status by application creation month, not decision month.')
+    return dict(customers=db.scalar(select(func.count()).select_from(Customer)),applications=db.scalar(select(func.count()).select_from(Application)),pending=db.scalar(select(func.count()).select_from(Application).where(Application.status.in_(['pending_review','escalated','information_requested']))),flags=db.scalar(select(func.count()).select_from(Flag).where(Flag.status.not_in(['resolved','dismissed','manager_approved']))),exposure=exposure,expected_loss=sum(x['expected_loss'] for x in items),high_risk=sum(x['risk_band']=='High' for x in items),approved=approvals,declined=declines,by_sector=group('sector'),by_risk=group('risk_band'),by_product=group('kind'),items=items,trends=sorted(trends.values(),key=lambda x:x['month']),disbursed_count=len(loans),outstanding=sum(x.outstanding for x in loans),scope='Assessed application pipeline, excluding declines; requested principal is exposure proxy. Disbursed balance is reported separately. Trends group current status by application creation month, not decision month.')
 @app.post('/api/portfolio/scenario')
 def portfolio_stress(data:Scenario,u=Depends(user),db=Depends(db_session)):
     rows=[calculate(db,a,data) for a in db.scalars(select(Application).where(Application.status!='declined')) if latest(db,Assessment,Assessment.application_id,a.id)]

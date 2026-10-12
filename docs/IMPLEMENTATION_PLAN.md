@@ -21,3 +21,11 @@ Assignment: `references/Applied_AI_Data_Science_Group_Project.docx.pdf`, 3 pages
 
 ## Current status
 Phases 0–10 have local implementations and executed core workflow checks. Source, migrations, training, tests, reference mapping, algorithm/architecture documentation, setup scripts and an editable 13-slide academic deck are delivered. The full enterprise vision still has explicit deployment/data/document-depth limitations rather than claimed certification; see KNOWN_LIMITATIONS. GitHub publication and live team presentation remain external. See IMPLEMENTATION_LOG and TEST_REPORT for measured verification.
+
+## Frontend and consistency refinement, 12 October 2026
+
+1. Preserve screenshot navigation; refine indigo/pale-canvas hierarchy, typography, cards, forms, tables and responsive layouts. Humanize stored statuses and standardize interface label capitalization while retaining finance acronyms.
+2. Compare reviewed document address evidence against the master address, retain source/page/field provenance and deduplicate repeated reviews.
+3. Compare explicitly supplied consecutive annual revenue periods in Python, with an educational 200% growth review threshold and safe zero-base handling.
+4. Add evidence verification, named-team escalation and administrator-as-manager approval. Gate final credit approval on completed consistency review; retain model assessments and audit transitions.
+5. Add idempotent, clearly synthetic demo cases, regression and browser coverage; visually inspect desktop/mobile captures. Leave port 8000 stopped after temporary testing.

@@ -15,8 +15,22 @@
 
 ## Current running state
 
-Local server at http://127.0.0.1:8000, frontend served by FastAPI. Database persists under data/orion.db; trusted model files under artifacts/. Credentials reside in ignored .env. All initial identities/names are fictional. Browser tests created additional clearly named Browser Demo/Browser Business records; they are retained intentionally as demonstrations of non-hardcoded intake.
+Port 8000 server stopped at the user's request. Database persists under data/orion.db; trusted model files under artifacts/. Credentials reside in ignored .env. All initial identities/names are fictional. Browser tests created additional clearly named Browser Demo/Browser Business records; they are retained intentionally as demonstrations of non-hardcoded intake.
+
+## Presentation revision, 12 October 2026
+
+Rebuilt the academic presentation to 14 slides following the user's business and technical structure. Final deliverable: output/presentation/ORION_Project_Presentation_Final.pptx. Includes actual application screenshot, editable architecture, feature and tuning tables, native CV/error charts, held-out metrics and speaker notes. Model figures remain the existing measured synthetic results. Financial ROI uses a clearly hypothetical year-one scenario with INR750,000 implementation and INR450,000 operations, calculated in Python by scripts/presentation_roi.py. It describes labor capacity value rather than realized cash savings. Source builder: scripts/build_presentation_v2.mjs, executed from the private tmp/deck folder with the bundled runtime. Package, geometry, font, chart workbook and import validators passed. Rendered all 14 final slides and inspected layouts, repairing architecture overlap, confusion-matrix wrapping and demo text. No application code changed or server restarted.
 
 ## Next-session orientation
 
 Read README, TEST_REPORT and KNOWN_LIMITATIONS first. Do not rebuild from scratch, reset existing DB or retrain just to change reported metrics. Use scripts/start.ps1 if no server is running. Do not overwrite final decisions; create a renewal application. Optional future enhancements are OCR binary installation/validation, real authorized outcome data, production security, deeper normalized product/subtype catalogs, richer bank-statement parsing and PostgreSQL/Docker integration verification. GitHub publication and actual team presentation are external actions not claimed complete.
+
+## Frontend and internal consistency refinement, 12 October 2026
+
+Reviewed the screenshot contact sheet and retained all 16 workspaces. Added an indigo command-center banner, stronger KPI/card hierarchy, refined forms/tables and responsive evidence cards. Centralized title-case label/status display with finance acronyms preserved. Charts render without entrance animation to prevent blank initial captures. Investigation workbench defaults to the selected customer and can show all findings.
+
+Reviewed document addresses now create idempotent source/page/field-linked address-conflict findings without replacing the master address. Explicit consecutive reporting years and prior-year revenue enable Python growth checks (educational threshold >=200%; zero-base percentages remain undefined). Findings support evidence verification, named-team escalation, and administrator acting as manager approval. Approval is blocked until these consistency findings receive manager approval. Original model assessments remain unchanged and investigation mutations are audited with before/after details. Team assignment is a local workflow record, not an external notification.
+
+Added idempotent scripts/seed_consistency_cases.py through the audited API: APP-14 has three synthetic address sources; APP-15 reports revenue rising from INR10m (2024) to INR50m (2025), a 400% increase. Existing records were retained. Additional automated browser records are explicitly fictional. No retraining, model metrics change, dependency installation or database schema migration was required; financial-period inputs live in existing JSON snapshots.
+
+Final validation: 21 Python tests passed; 4 frontend unit tests passed; TypeScript/Vite build passed; 5 Chromium journeys passed, including address escalation/verification/manager sign-off and entering annual revenue comparison. Desktop and mobile captures were visually inspected. Port 8000 is stopped after verification, preserving the user's earlier request.

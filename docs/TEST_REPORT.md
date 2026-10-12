@@ -1,5 +1,15 @@
 # Executed verification
 
+## Latest refinement validation — 12 October 2026
+
+- Python: **21 passed** (5.85s), including multiple-source address conflicts, source provenance, idempotent re-review, formatting normalization, evidence/manager approval gates, immutable approved findings, unchanged original model assessment, escalation-team requirement, whitespace rejection and outstanding finding count consistency. Revenue cases exercise below/at/above 200%, zero-base positive and zero revenue, repeated snapshots and nonconsecutive-year rejection.
+- Frontend: **4 unit tests passed**; finance display conventions plus title-case status/acronym formatting. TypeScript and Vite production build passed.
+- Chromium: **5 workflows passed** (7.9s on the final run). Added address evidence escalation → verification → manager sign-off and business prior-year revenue input → visible 400% review finding. Existing intake, navigation, inference, reports, exports and mobile scenario workflows still pass.
+- Visual inspection: refreshed Command Center and investigation desktop/mobile captures; added revenue-verification capture. Mobile horizontal-overflow checks pass at 390px and 780px.
+- Existing nonblocking warnings: Starlette/httpx test-client deprecation and React Router ignored `use client` bundler directives. No dependency changes made.
+
+Earlier baseline results below are retained as implementation history.
+
 Date: 12 October 2026, Asia/Calcutta. Environment: Windows, Python 3.12 dedicated .venv, Node.js 24 bundled runtime, pnpm 11.25.0, Chromium via Playwright. Tests run against actual local services and model artifacts.
 
 |Check|Executed result|

@@ -1,11 +1,20 @@
 from typing import Literal
-from pydantic import BaseModel, Field, ConfigDict, field_validator
+from pydantic import BaseModel, Field, ConfigDict, field_validator, model_validator
 class Strict(BaseModel):
     model_config=ConfigDict(extra='forbid',allow_inf_nan=False)
 class Login(Strict):
     username:str=Field(min_length=1,max_length=100)
     password:str=Field(min_length=1,max_length=200)
 class Financial(Strict):
+    previous_year_revenue:float|None=Field(default=None,ge=0,le=1e14)
+    revenue_year:int|None=Field(default=None,ge=1900,le=2100)
+    previous_revenue_year:int|None=Field(default=None,ge=1900,le=2100)
+    @model_validator(mode='after')
+    def revenue_periods(self):
+        if self.previous_year_revenue is not None:
+            if self.revenue_year is None or self.previous_revenue_year is None or self.revenue_year-self.previous_revenue_year!=1:
+                raise ValueError('Revenue comparison requires consecutive reporting years')
+        return self
     employer:str=Field(default='',max_length=200)
     management_quality:int=Field(default=50,ge=0,le=100)
     income:float=Field(default=0,ge=0,le=1e12)
@@ -59,8 +68,13 @@ class FieldInput(Strict):
     value:str=Field(max_length=1000)
     status:Literal['accepted','corrected','flagged']
 class Resolution(Strict):
-    status:Literal['investigating','resolved','dismissed']
+    status:Literal['investigating','resolved','dismissed','escalated','verified','manager_approved']
     reason:str=Field(min_length=10,max_length=2000)
+    assigned_team:str=Field(default='',max_length=100)
+    @field_validator('reason',mode='before')
+    @classmethod
+    def meaningful_reason(cls,v):
+        return v.strip() if isinstance(v,str) else v
 class Scenario(Strict):
     income_shock:float=Field(default=0,ge=-95,le=100)
     revenue_shock:float=Field(default=0,ge=-95,le=100)

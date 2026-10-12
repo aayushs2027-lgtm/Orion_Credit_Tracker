@@ -55,6 +55,61 @@ def create_case(client,kind='personal',secured=False):
     a=client.post('/api/applications',json=dict(customer_id=cid,amount=500000,rate=12,months=60,secured=secured));assert a.status_code==200,a.text
     return cid,a.json()['id'],data
 
+def test_multiple_document_addresses_and_manager_gate(client):
+    cid,aid,data=create_case(client)
+    for name,address in [('identity.txt','10 Synthetic Oak Road'),('bank.txt','88 Synthetic Pine Lane')]:
+        assert client.post(f'/api/applications/{aid}/documents',files={'file':(name,('Address: '+address).encode(),'text/plain')}).status_code==200
+    detail=client.get(f'/api/applications/{aid}').json()
+    for document in detail['documents']:
+        for field in document['fields']:
+            for _ in range(2):
+                assert client.patch(f"/api/fields/{field['id']}",json={'value':field['value'],'status':'accepted'}).status_code==200
+    flags=[f for f in client.get('/api/flags').json() if f['customer_id']==cid]
+    assert len(flags)==2  # Re-review is idempotent; each conflicting source retains provenance.
+    assert all('page 1' in f['detail'] and 'Reviewed source:' in f['detail'] for f in flags)
+    assert client.get(f'/api/customers/{cid}').json()['address']==data['address']
+    assert client.post(f'/api/applications/{aid}/assess').status_code==200
+    decision={'decision':'approved','reason':'Synthetic documents checked by manager','override':True}
+    assert client.post(f'/api/applications/{aid}/review',json=decision).status_code==409
+    for flag in flags:
+        url=f"/api/flags/{flag['id']}"
+        assert client.patch(url,json={'status':'manager_approved','reason':'Manager tried before verification'}).status_code==409
+        assert client.patch(url,json={'status':'dismissed','reason':'Attempt to bypass verification gate'}).status_code==422
+        assert client.patch(url,json={'status':'escalated','reason':'Send to identity verification team'}).status_code==422
+        assert client.patch(url,json={'status':'escalated','assigned_team':'Identity Verification','reason':'Compare the address on bank and identity evidence'}).status_code==200
+        assert client.patch(url,json={'status':'verified','reason':' '*12}).status_code==422
+        outstanding=sum(f['status'] not in ('resolved','dismissed','manager_approved') for f in client.get('/api/flags').json())
+        assert client.get('/api/portfolio').json()['flags']==outstanding
+        assert client.patch(url,json={'status':'verified','reason':'Reviewed dated documents and confirmed a residential move'}).status_code==200
+        client.post('/api/login',json={'username':'analyst','password':'TestPassword123!'})
+        assert client.patch(url,json={'status':'manager_approved','reason':'Analyst attempting manager approval'}).status_code==403
+        client.post('/api/login',json={'username':'admin','password':'TestPassword123!'})
+        assert client.patch(url,json={'status':'manager_approved','reason':'Manager reviewed evidence and accepts documented move'}).status_code==200
+        assert client.patch(url,json={'status':'investigating','reason':'Try reopening a locked manager decision'}).status_code==409
+    before=client.get(f'/api/applications/{aid}').json()['assessment']
+    assert client.post(f'/api/applications/{aid}/review',json=decision).status_code==200
+    assert client.get(f'/api/applications/{aid}').json()['assessment']==before
+
+@pytest.mark.parametrize('previous,current,expected',[(1000000,5000000,True),(1000000,2999999,False),(1000000,3000000,True),(0,1000000,True),(0,0,False)])
+def test_revenue_growth_comparison(client,previous,current,expected):
+    cid,aid,data=create_case(client,'business')
+    data['financial'].update(revenue=current,previous_year_revenue=previous,previous_revenue_year=2024,revenue_year=2025)
+    for _ in range(2):assert client.patch(f'/api/customers/{cid}',json=data).status_code==200
+    flags=[f for f in client.get('/api/flags').json() if f['customer_id']==cid and f['category']=='revenue_growth']
+    assert len(flags)==int(expected)
+    if expected:
+        assert '2024' in flags[0]['detail'] and '2025' in flags[0]['detail']
+        if previous==0:assert 'undefined' in flags[0]['detail']
+    data['financial']['previous_revenue_year']=2022
+    assert client.patch(f'/api/customers/{cid}',json=data).status_code==422
+
+def test_address_formatting_is_not_a_conflict(client):
+    cid,aid,data=create_case(client)
+    client.post(f'/api/applications/{aid}/documents',files={'file':('same.txt',b'Address: FICTIONAL, TEST ADDRESS','text/plain')})
+    f=client.get(f'/api/applications/{aid}').json()['documents'][0]['fields'][0]
+    assert client.patch(f"/api/fields/{f['id']}",json={'value':f['value'],'status':'accepted'}).status_code==200
+    assert not [f for f in client.get('/api/flags').json() if f['customer_id']==cid]
+
 def test_personal_end_to_end(client):
     cid,aid,data=create_case(client)
     doc=client.post(f'/api/applications/{aid}/documents',files={'file':('report.txt',b'Monthly income: INR 160,000\nCredit score: 780\n','text/plain')})
